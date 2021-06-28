@@ -24,6 +24,7 @@ type DiscordConfig struct {
 }
 
 func initViper() error {
+	log.Debug("Reading config")
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(".")
@@ -62,6 +63,7 @@ func initLogging() {
 }
 
 func initDiscord() (*discordgo.Session, error) {
+	log.Debug("Configuring Discord client")
 	discord, err := discordgo.New("Bot " + Configuration.Discord.Token)
 	if err != nil {
 		log.Error("Error creating discord client")
@@ -71,12 +73,17 @@ func initDiscord() (*discordgo.Session, error) {
 }
 
 func init() {
+
+	// Build config
 	err := initViper()
 	if err != nil {
 		log.Fatal("Unable to init config. Bye.")
 	}
+
+	// Configure logger
 	initLogging()
 
+	// Configure Discord Client
 	Configuration.DiscordClient, err = initDiscord()
 	if err != nil {
 		log.Fatal("No discord client could be created. The bot cannot function. Exiting..")

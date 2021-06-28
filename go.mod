@@ -3,6 +3,7 @@ module popsicles-bot
 go 1.15
 
 require (
+	github.com/Krognol/go-wolfram v0.0.0-20180610151123-5b91101b92a8
 	github.com/bwmarrin/discordgo v0.23.2
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/sirupsen/logrus v1.8.1
