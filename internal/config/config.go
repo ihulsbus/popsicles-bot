@@ -16,7 +16,8 @@ type Config struct {
 }
 
 type GlobalConfig struct {
-	Debug bool
+	Debug  bool
+	Prefix string
 }
 
 type DiscordConfig struct {
@@ -78,6 +79,9 @@ func init() {
 	err := initViper()
 	if err != nil {
 		log.Fatal("Unable to init config. Bye.")
+	}
+	if len(Configuration.Global.Prefix) != 1 {
+		log.Fatal("Please check the configured prefix.")
 	}
 
 	// Configure logger

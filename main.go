@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"math"
 	"os"
 	"os/signal"
 	"popsicles-bot/internal/config"
@@ -13,20 +12,16 @@ import (
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/martinlindhe/unit"
 	log "github.com/sirupsen/logrus"
 )
 
 //DC is a DiscordClient shortcut for readability
 var (
-	DC = config.Configuration.DiscordClient
-	// WAC         = config.Configuration.WolframAlphaClient
-	numberRegex = regexp.MustCompile(`[-]?\d[\d,]*[\.]?[\d{2}]*`)
-)
-
-type (
-	// or centigrade
-	Celsius    float64
-	Fahrenheit float64
+	DC               = config.Configuration.DiscordClient
+	prefix           = config.Configuration.Global.Prefix
+	numberRegex      = regexp.MustCompile(`[-]?\d[\d,]*[\.]?[\d{2}]*`)
+	disableDave bool = false
 )
 
 func getTemperatureValue(message string) []string {
@@ -34,16 +29,9 @@ func getTemperatureValue(message string) []string {
 	return submatchall
 }
 
-func Celsius2Fahrenheit(c float64) Fahrenheit {
-	return Fahrenheit(math.Round((c*9/5+32)*100) / 100)
-}
+func getFarenheit(message string) ([]string, []float64, error) {
 
-func Fahrenheit2Celsius(f float64) Celsius {
-	return Celsius(math.Round(((f-32)*5/9)*100) / 100)
-}
-
-func getFarenheit(message string) ([]string, []Fahrenheit, error) {
-	var calculations []Fahrenheit
+	var calculations []float64
 	temperatures := getTemperatureValue(message)
 	if len(temperatures) == 0 {
 		err := errors.New("no temperatures found in the message")
@@ -54,14 +42,15 @@ func getFarenheit(message string) ([]string, []Fahrenheit, error) {
 		if err != nil {
 			return temperatures, calculations, err
 		}
-		calculations = append(calculations, Celsius2Fahrenheit(temp))
+		f := unit.FromFahrenheit(temp)
+		calculations = append(calculations, f.Celsius())
 
 	}
 	return temperatures, calculations, nil
 }
 
-func getCelcius(message string) ([]string, []Celsius, error) {
-	var calculations []Celsius
+func getCelcius(message string) ([]string, []float64, error) {
+	var calculations []float64
 	temperatures := getTemperatureValue(message)
 	if len(temperatures) == 0 {
 		err := errors.New("no temperatures found in the message")
@@ -72,7 +61,8 @@ func getCelcius(message string) ([]string, []Celsius, error) {
 		if err != nil {
 			return temperatures, calculations, err
 		}
-		calculations = append(calculations, Fahrenheit2Celsius(temp))
+		c := unit.FromCelsius(temp)
+		calculations = append(calculations, c.Fahrenheit())
 
 	}
 	return temperatures, calculations, nil
@@ -84,9 +74,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	// Check if the message is "!hey"
-	if strings.HasPrefix(m.Content, "!help") {
-		message := "Somebody has been lazy..."
+	if m.Author.ID == "288046134361063424" || strings.Contains(m.Author.Username, "davefmv") && disableDave {
+		message := "From tato, with love: ( ° ͜ʖ͡°)╭∩╮"
 		_, err := s.ChannelMessageSend(m.ChannelID, message)
 		if err != nil {
 			log.Errorln("Error sending message: %v", err)
@@ -94,7 +83,17 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	if strings.HasPrefix(m.Content, "!source") {
+	// Check if the message is "!help"
+	if strings.HasPrefix(m.Content, prefix+"help") {
+		message := fmt.Sprintf("Available commands:\n source, farenheit, celsius")
+		_, err := s.ChannelMessageSend(m.ChannelID, message)
+		if err != nil {
+			log.Errorln("Error sending message: %v", err)
+		}
+		return
+	}
+
+	if strings.HasPrefix(m.Content, prefix+"source") {
 		message := "Source code can be found at https://github.com/ihulsbus/popsicles-bot"
 		_, err := s.ChannelMessageSend(m.ChannelID, message)
 		if err != nil {
@@ -103,8 +102,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	if strings.HasPrefix(m.Content, "!farenheit") {
-
+	if strings.HasPrefix(m.Content, prefix+"farenheit") {
 		celsius, farenheit, err := getFarenheit(m.Content)
 		if err != nil {
 			log.Error("Error converting temps to Farenheit: %v", err)
@@ -123,7 +121,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		return
 	}
-	if strings.HasPrefix(m.Content, "!celsius") {
+	if strings.HasPrefix(m.Content, prefix+"celsius") {
 		farenheit, celsius, err := getCelcius(m.Content)
 		if err != nil {
 			log.Error("Error converting temps to Celsius: %v", err)
@@ -160,6 +158,7 @@ func guildCreate(s *discordgo.Session, event *discordgo.GuildCreate) {
 }
 
 func main() {
+	log.Info(fmt.Sprintf("Bot prefix is set to %v", prefix))
 	log.Info("Starting main loop")
 
 	// Register handler for incoming messages
