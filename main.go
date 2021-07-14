@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"os/signal"
 	"popsicles-bot/internal/config"
@@ -42,8 +43,8 @@ func getFarenheit(message string) ([]string, []float64, error) {
 		if err != nil {
 			return temperatures, calculations, err
 		}
-		f := unit.FromFahrenheit(temp)
-		calculations = append(calculations, f.Celsius())
+		c := unit.FromCelsius(temp)
+		calculations = append(calculations, math.Round(c.Fahrenheit()*100)/100)
 
 	}
 	return temperatures, calculations, nil
@@ -61,8 +62,8 @@ func getCelcius(message string) ([]string, []float64, error) {
 		if err != nil {
 			return temperatures, calculations, err
 		}
-		c := unit.FromCelsius(temp)
-		calculations = append(calculations, c.Fahrenheit())
+		f := unit.FromFahrenheit(temp)
+		calculations = append(calculations, math.Round(f.Celsius()*100)/100)
 
 	}
 	return temperatures, calculations, nil
@@ -83,9 +84,38 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
+	if strings.HasPrefix(m.Content, prefix+"toggleannoy") {
+		if m.Author.ID == "188032617793323008" {
+			if disableDave {
+				disableDave = false
+				message := "A certain person will now be allowed to use the bot"
+				_, err := s.ChannelMessageSend(m.ChannelID, message)
+				if err != nil {
+					log.Errorln("Error sending message: %v", err)
+				}
+				return
+			} else {
+				disableDave = true
+				message := "A certain person will now be blocked from using the bot"
+				_, err := s.ChannelMessageSend(m.ChannelID, message)
+				if err != nil {
+					log.Errorln("Error sending message: %v", err)
+				}
+				return
+			}
+		} else {
+			message := "you are not authorized to perform this action"
+			_, err := s.ChannelMessageSend(m.ChannelID, message)
+			if err != nil {
+				log.Errorln("Error sending message: %v", err)
+			}
+			return
+		}
+	}
+
 	// Check if the message is "!help"
 	if strings.HasPrefix(m.Content, prefix+"help") {
-		message := fmt.Sprintf("Available commands:\n source, farenheit, celsius")
+		message := "Available commands:\n source, farenheit, celsius toggleannoy"
 		_, err := s.ChannelMessageSend(m.ChannelID, message)
 		if err != nil {
 			log.Errorln("Error sending message: %v", err)
