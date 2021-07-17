@@ -75,7 +75,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	if m.Author.ID == "288046134361063424" || strings.Contains(m.Author.Username, "davefmv") && disableDave {
+	if m.Author.ID == "288046134361063424" && disableDave {
 		message := "From tato, with love: ( ° ͜ʖ͡°)╭∩╮"
 		_, err := s.ChannelMessageSend(m.ChannelID, message)
 		if err != nil {
