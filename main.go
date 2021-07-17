@@ -75,99 +75,105 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	if m.Author.ID == "288046134361063424" && disableDave {
-		message := "From tato, with love: ( ° ͜ʖ͡°)╭∩╮"
-		_, err := s.ChannelMessageSend(m.ChannelID, message)
-		if err != nil {
-			log.Errorln("Error sending message: %v", err)
-		}
-		return
-	}
+	if strings.HasPrefix(m.Content, prefix) {
 
-	if strings.HasPrefix(m.Content, prefix+"toggleannoy") {
-		if m.Author.ID == "188032617793323008" {
-			if disableDave {
-				disableDave = false
-				message := "A certain person will now be allowed to use the bot"
-				_, err := s.ChannelMessageSend(m.ChannelID, message)
-				if err != nil {
-					log.Errorln("Error sending message: %v", err)
+		// TODO: make a case switch instead of endless if statements
+		if m.Author.ID == "288046134361063424" && disableDave {
+			message := "From tato, with love: ( ° ͜ʖ͡°)╭∩╮"
+			_, err := s.ChannelMessageSend(m.ChannelID, message)
+			if err != nil {
+				log.Errorln("Error sending message: %v", err)
+			}
+			return
+		}
+
+		if strings.HasPrefix(m.Content, prefix+"toggleannoy") {
+			if m.Author.ID == "188032617793323008" {
+				if disableDave {
+					disableDave = false
+					message := "A certain person will now be allowed to use the bot"
+					_, err := s.ChannelMessageSend(m.ChannelID, message)
+					if err != nil {
+						log.Errorln("Error sending message: %v", err)
+					}
+					return
+				} else {
+					disableDave = true
+					message := "A certain person will now be blocked from using the bot"
+					_, err := s.ChannelMessageSend(m.ChannelID, message)
+					if err != nil {
+						log.Errorln("Error sending message: %v", err)
+					}
+					return
 				}
-				return
 			} else {
-				disableDave = true
-				message := "A certain person will now be blocked from using the bot"
+				message := "you are not authorized to perform this action"
 				_, err := s.ChannelMessageSend(m.ChannelID, message)
 				if err != nil {
 					log.Errorln("Error sending message: %v", err)
 				}
 				return
 			}
-		} else {
-			message := "you are not authorized to perform this action"
+		}
+
+		// Check if the message is "!help"
+		if strings.HasPrefix(m.Content, prefix+"help") {
+			message := "Available commands:\n source, farenheit, celsius toggleannoy"
 			_, err := s.ChannelMessageSend(m.ChannelID, message)
 			if err != nil {
 				log.Errorln("Error sending message: %v", err)
 			}
 			return
 		}
-	}
 
-	// Check if the message is "!help"
-	if strings.HasPrefix(m.Content, prefix+"help") {
-		message := "Available commands:\n source, farenheit, celsius toggleannoy"
-		_, err := s.ChannelMessageSend(m.ChannelID, message)
-		if err != nil {
-			log.Errorln("Error sending message: %v", err)
-		}
-		return
-	}
-
-	if strings.HasPrefix(m.Content, prefix+"source") {
-		message := "Source code can be found at https://github.com/ihulsbus/popsicles-bot"
-		_, err := s.ChannelMessageSend(m.ChannelID, message)
-		if err != nil {
-			log.Errorln("Error sending message: %v", err)
-		}
-		return
-	}
-
-	if strings.HasPrefix(m.Content, prefix+"farenheit") {
-		celsius, farenheit, err := getFarenheit(m.Content)
-		if err != nil {
-			log.Error("Error converting temps to Farenheit: %v", err)
-			_, err := s.ChannelMessageSend(m.ChannelID, err.Error())
+		if strings.HasPrefix(m.Content, prefix+"source") {
+			message := "Source code can be found at https://github.com/ihulsbus/popsicles-bot"
+			_, err := s.ChannelMessageSend(m.ChannelID, message)
 			if err != nil {
 				log.Errorln("Error sending message: %v", err)
 			}
 			return
 		}
-		for index := range farenheit {
-			message := fmt.Sprintf("%v° Celsius is %v° Farenheit", celsius[index], farenheit[index])
-			_, err := s.ChannelMessageSend(m.ChannelID, message)
+
+		if strings.HasPrefix(m.Content, prefix+"farenheit") {
+			celsius, farenheit, err := getFarenheit(m.Content)
 			if err != nil {
-				log.Errorln("Error sending message: %v", err)
+				log.Error("Error converting temps to Farenheit: %v", err)
+				_, err := s.ChannelMessageSend(m.ChannelID, err.Error())
+				if err != nil {
+					log.Errorln("Error sending message: %v", err)
+				}
+				return
 			}
-		}
-		return
-	}
-	if strings.HasPrefix(m.Content, prefix+"celsius") {
-		farenheit, celsius, err := getCelcius(m.Content)
-		if err != nil {
-			log.Error("Error converting temps to Celsius: %v", err)
-			_, err := s.ChannelMessageSend(m.ChannelID, err.Error())
-			if err != nil {
-				log.Errorln("Error sending message: %v", err)
+			for index := range farenheit {
+				message := fmt.Sprintf("%v° Celsius is %v° Farenheit", celsius[index], farenheit[index])
+				_, err := s.ChannelMessageSend(m.ChannelID, message)
+				if err != nil {
+					log.Errorln("Error sending message: %v", err)
+				}
 			}
 			return
 		}
-		for index := range celsius {
-			message := fmt.Sprintf("%v° Farenheit is %v° Celsius", farenheit[index], celsius[index])
-			_, err := s.ChannelMessageSend(m.ChannelID, message)
+		if strings.HasPrefix(m.Content, prefix+"celsius") {
+			farenheit, celsius, err := getCelcius(m.Content)
 			if err != nil {
-				log.Errorln("Error sending message: %v", err)
+				log.Error("Error converting temps to Celsius: %v", err)
+				_, err := s.ChannelMessageSend(m.ChannelID, err.Error())
+				if err != nil {
+					log.Errorln("Error sending message: %v", err)
+				}
+				return
 			}
+			for index := range celsius {
+				message := fmt.Sprintf("%v° Farenheit is %v° Celsius", farenheit[index], celsius[index])
+				_, err := s.ChannelMessageSend(m.ChannelID, message)
+				if err != nil {
+					log.Errorln("Error sending message: %v", err)
+				}
+			}
+			return
 		}
+	} else {
 		return
 	}
 }
