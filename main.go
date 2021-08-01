@@ -155,7 +155,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				return
 			}
 			log.Debugf("executing setHeight with values %v, %v", m.Author.ID, height)
-			if height > 50 && height < 230 {
+			if (height >= 50) && (height <= 230) {
 				setHeight(uid, height)
 				_, err = s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("height set to %v Centimeters", height))
 				if err != nil {
