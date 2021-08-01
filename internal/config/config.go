@@ -1,9 +1,12 @@
 package config
 
 import (
+	"database/sql"
+
 	"github.com/bwmarrin/discordgo"
 	log "github.com/sirupsen/logrus"
-
+	_ "github.com/mattn/go-sqlite3"
+	
 	"github.com/spf13/viper"
 )
 
@@ -13,11 +16,17 @@ type Config struct {
 	Global        GlobalConfig
 	Discord       DiscordConfig
 	DiscordClient *discordgo.Session
+	DataStore     DataStoreConfig
 }
 
 type GlobalConfig struct {
 	Debug  bool
 	Prefix string
+}
+
+type DataStoreConfig struct {
+	Path   string
+	Client *sql.DB
 }
 
 type DiscordConfig struct {
@@ -73,6 +82,14 @@ func initDiscord() (*discordgo.Session, error) {
 	return discord, err
 }
 
+func initDatastore() {
+	db, err := sql.Open("sqlite3", Configuration.DataStore.Path)
+	if err != nil {
+		log.Fatalf("Unable to open the datastore: %v", err)
+	}
+	Configuration.DataStore.Client = db
+}
+
 func init() {
 
 	// Build config
@@ -86,6 +103,9 @@ func init() {
 
 	// Configure logger
 	initLogging()
+
+	// Init datastore
+	initDatastore()
 
 	// Configure Discord Client
 	Configuration.DiscordClient, err = initDiscord()

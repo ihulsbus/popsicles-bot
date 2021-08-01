@@ -1,73 +1,28 @@
 package main
 
 import (
-	"errors"
+	"database/sql"
 	"fmt"
-	"math"
 	"os"
 	"os/signal"
 	"popsicles-bot/internal/config"
 	"regexp"
-	"strconv"
 	"strings"
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/martinlindhe/unit"
 	log "github.com/sirupsen/logrus"
 )
 
-//DC is a DiscordClient shortcut for readability
+// DC is a DiscordClient shortcut for readability
+// DS is a DataStoreClient shortcut for readability
 var (
 	DC               = config.Configuration.DiscordClient
+	DS               = config.Configuration.DataStore.Client
 	prefix           = config.Configuration.Global.Prefix
 	numberRegex      = regexp.MustCompile(`[-]?\d[\d,]*[\.]?[\d{2}]*`)
 	disableDave bool = false
 )
-
-func getTemperatureValue(message string) []string {
-	submatchall := numberRegex.FindAllString(message, -1)
-	return submatchall
-}
-
-func getFarenheit(message string) ([]string, []float64, error) {
-
-	var calculations []float64
-	temperatures := getTemperatureValue(message)
-	if len(temperatures) == 0 {
-		err := errors.New("no temperatures found in the message")
-		return temperatures, calculations, err
-	}
-	for _, temperature := range temperatures {
-		temp, err := strconv.ParseFloat(temperature, 64)
-		if err != nil {
-			return temperatures, calculations, err
-		}
-		c := unit.FromCelsius(temp)
-		calculations = append(calculations, math.Round(c.Fahrenheit()*100)/100)
-
-	}
-	return temperatures, calculations, nil
-}
-
-func getCelcius(message string) ([]string, []float64, error) {
-	var calculations []float64
-	temperatures := getTemperatureValue(message)
-	if len(temperatures) == 0 {
-		err := errors.New("no temperatures found in the message")
-		return temperatures, calculations, err
-	}
-	for _, temperature := range temperatures {
-		temp, err := strconv.ParseFloat(temperature, 64)
-		if err != nil {
-			return temperatures, calculations, err
-		}
-		f := unit.FromFahrenheit(temp)
-		calculations = append(calculations, math.Round(f.Celsius()*100)/100)
-
-	}
-	return temperatures, calculations, nil
-}
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Check if the message is our own so we can ignore those (something with loops)
@@ -82,11 +37,12 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			message := "From tato, with love: ( ° ͜ʖ͡°)╭∩╮"
 			_, err := s.ChannelMessageSend(m.ChannelID, message)
 			if err != nil {
-				log.Errorln("Error sending message: %v", err)
+				log.Errorf("Error sending message: %v", err)
 			}
 			return
 		}
 
+		// toggleannoy
 		if strings.HasPrefix(m.Content, prefix+"toggleannoy") {
 			if m.Author.ID == "188032617793323008" {
 				if disableDave {
@@ -94,7 +50,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					message := "A certain person will now be allowed to use the bot"
 					_, err := s.ChannelMessageSend(m.ChannelID, message)
 					if err != nil {
-						log.Errorln("Error sending message: %v", err)
+						log.Errorf("Error sending message: %v", err)
 					}
 					return
 				} else {
@@ -102,7 +58,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					message := "A certain person will now be blocked from using the bot"
 					_, err := s.ChannelMessageSend(m.ChannelID, message)
 					if err != nil {
-						log.Errorln("Error sending message: %v", err)
+						log.Errorf("Error sending message: %v", err)
 					}
 					return
 				}
@@ -110,38 +66,40 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				message := "you are not authorized to perform this action"
 				_, err := s.ChannelMessageSend(m.ChannelID, message)
 				if err != nil {
-					log.Errorln("Error sending message: %v", err)
+					log.Errorf("Error sending message: %v", err)
 				}
 				return
 			}
 		}
 
-		// Check if the message is "!help"
+		// Check if the message is "help"
 		if strings.HasPrefix(m.Content, prefix+"help") {
 			message := "Available commands:\n source, farenheit, celsius toggleannoy"
 			_, err := s.ChannelMessageSend(m.ChannelID, message)
 			if err != nil {
-				log.Errorln("Error sending message: %v", err)
+				log.Errorf("Error sending message: %v", err)
 			}
 			return
 		}
 
+		// source
 		if strings.HasPrefix(m.Content, prefix+"source") {
 			message := "Source code can be found at https://github.com/ihulsbus/popsicles-bot"
 			_, err := s.ChannelMessageSend(m.ChannelID, message)
 			if err != nil {
-				log.Errorln("Error sending message: %v", err)
+				log.Errorf("Error sending message: %v", err)
 			}
 			return
 		}
 
+		// convert to farenheit
 		if strings.HasPrefix(m.Content, prefix+"farenheit") {
 			celsius, farenheit, err := getFarenheit(m.Content)
 			if err != nil {
 				log.Error("Error converting temps to Farenheit: %v", err)
 				_, err := s.ChannelMessageSend(m.ChannelID, err.Error())
 				if err != nil {
-					log.Errorln("Error sending message: %v", err)
+					log.Errorf("Error sending message: %v", err)
 				}
 				return
 			}
@@ -149,18 +107,20 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				message := fmt.Sprintf("%v° Celsius is %v° Farenheit", celsius[index], farenheit[index])
 				_, err := s.ChannelMessageSend(m.ChannelID, message)
 				if err != nil {
-					log.Errorln("Error sending message: %v", err)
+					log.Errorf("Error sending message: %v", err)
 				}
 			}
 			return
 		}
+
+		//convert to celsius
 		if strings.HasPrefix(m.Content, prefix+"celsius") {
 			farenheit, celsius, err := getCelcius(m.Content)
 			if err != nil {
 				log.Error("Error converting temps to Celsius: %v", err)
 				_, err := s.ChannelMessageSend(m.ChannelID, err.Error())
 				if err != nil {
-					log.Errorln("Error sending message: %v", err)
+					log.Errorf("Error sending message: %v", err)
 				}
 				return
 			}
@@ -168,8 +128,76 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				message := fmt.Sprintf("%v° Farenheit is %v° Celsius", farenheit[index], celsius[index])
 				_, err := s.ChannelMessageSend(m.ChannelID, message)
 				if err != nil {
-					log.Errorln("Error sending message: %v", err)
+					log.Errorf("Error sending message: %v", err)
 				}
+			}
+			return
+		}
+
+		// set height
+		if strings.HasPrefix(m.Content, prefix+"setheight") {
+			height, err := getHeight(m.Content)
+			if err != nil {
+				log.Errorf("Unable to get the height from the message: %v", err)
+				_, err = s.ChannelMessageSend(m.ChannelID, `Unable to get height from message. Do "setheight <length in Centimeters>`)
+				if err != nil {
+					log.Errorf("Error sending message: %v", err)
+				}
+			}
+			uid, err := convertStrToInt(m.Author.ID)
+			if err != nil {
+				log.Errorf("Unable to convert author ID to int: %v", err)
+				_, err = s.ChannelMessageSend(m.ChannelID, "Something went wrong. Please try again later.")
+				if err != nil {
+					log.Errorf("Error sending message: %v", err)
+				}
+			}
+			log.Debugf("executing setHeight with values %v, %v", m.Author.ID, height)
+
+			setHeight(uid, height)
+			_, err = s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("height set to %v Centimeters", height))
+			if err != nil {
+				log.Errorf("Error sending message: %v", err)
+			}
+			return
+		}
+
+		if strings.HasPrefix(m.Content, prefix+"height") {
+			uid, err := convertStrToInt(m.Mentions[0].ID)
+			if err != nil {
+				log.Errorf("Unable to convert author ID to int: %v", err)
+			}
+			height, err := getStoredHeight(uid)
+			if err != nil {
+				if err == sql.ErrNoRows {
+					_, err = s.ChannelMessageSend(m.ChannelID, "This user did not set his height yet.")
+					if err != nil {
+						log.Errorf("Error sending message: %v", err)
+					}
+					return
+				} else {
+					_, err = s.ChannelMessageSend(m.ChannelID, "Something went wrong. Please try again later.")
+					if err != nil {
+						log.Errorf("Error sending message: %v", err)
+					}
+					return
+				}
+
+			}
+			message := m.Mentions[0].Mention() + fmt.Sprintf(" is %v Centimeters tall", height)
+			_, err = s.ChannelMessageSend(m.ChannelID, message)
+			if err != nil {
+				log.Errorf("Error sending message: %v", err)
+			}
+			return
+		}
+
+		// dirty boi
+		if strings.HasPrefix(m.Content, prefix+"girth") || strings.HasPrefix(m.Content, prefix+"setgirth") {
+			message := "You wish ya dirty wanker"
+			_, err := s.ChannelMessageSend(m.ChannelID, message)
+			if err != nil {
+				log.Errorf("Error sending message: %v", err)
 			}
 			return
 		}
@@ -178,30 +206,18 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 }
 
-func guildCreate(s *discordgo.Session, event *discordgo.GuildCreate) {
-	if event.Guild.Unavailable {
-		return
-	}
-	for _, channel := range event.Guild.Channels {
-		if channel.ID == event.Guild.ID {
-			_, err := s.ChannelMessageSend(channel.ID, "Popsicles for sale! Get 'em here! Use !help for the available commands")
-			if err != nil {
-				log.Errorln("Error sending message: %v", err)
-			}
-			return
-		}
-	}
-}
-
 func main() {
 	log.Info(fmt.Sprintf("Bot prefix is set to %v", prefix))
 	log.Info("Starting main loop")
 
+	// Make sure we close the datastore on exit
+	defer DS.Close()
+	if err := setupDatastore(); err != nil {
+		log.Fatalf("Exiting as the datastore is not functional: %v", err)
+	}
+
 	// Register handler for incoming messages
 	DC.AddHandler(messageCreate)
-
-	// Register handler for server join messages
-	DC.AddHandler(guildCreate)
 
 	DC.Identify.Intents = discordgo.IntentsGuilds | discordgo.IntentsGuildMessages
 

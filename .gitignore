@@ -15,4 +15,7 @@
 # vendor/
 
 # Ignore application config
-config/**
+**/config.yml
+
+# Ignore test databases 
+**/**.db
