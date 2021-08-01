@@ -143,6 +143,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				if err != nil {
 					log.Errorf("Error sending message: %v", err)
 				}
+				return
 			}
 			uid, err := convertStrToInt(m.Author.ID)
 			if err != nil {
@@ -151,15 +152,23 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				if err != nil {
 					log.Errorf("Error sending message: %v", err)
 				}
+				return
 			}
 			log.Debugf("executing setHeight with values %v, %v", m.Author.ID, height)
-
-			setHeight(uid, height)
-			_, err = s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("height set to %v Centimeters", height))
-			if err != nil {
-				log.Errorf("Error sending message: %v", err)
+			if height > 50 && height < 230 {
+				setHeight(uid, height)
+				_, err = s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("height set to %v Centimeters", height))
+				if err != nil {
+					log.Errorf("Error sending message: %v", err)
+				}
+				return
+			} else {
+				_, err = s.ChannelMessageSend(m.ChannelID, "Invalid height given. Height needs to be between 50 and 230 centimeters.")
+				if err != nil {
+					log.Errorf("Error sending message: %v", err)
+				}
+				return
 			}
-			return
 		}
 
 		if strings.HasPrefix(m.Content, prefix+"height") {
