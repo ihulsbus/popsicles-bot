@@ -19,7 +19,7 @@ RUN go mod verify
 
 
 # Build the binary.
-RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o /go/bin/popsicles-bot
+RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -ldflags="-w -s" -o /go/bin/popsicles-bot
 
 ############################
 # STEP 2 build a small image
