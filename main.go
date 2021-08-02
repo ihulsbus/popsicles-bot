@@ -154,8 +154,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				}
 				return
 			}
-			log.Debugf("executing setHeight with values %v, %v", m.Author.ID, height)
 			if (height >= 50) && (height <= 230) {
+				log.Debugf("executing setHeight with values %v, %v", m.Author.ID, height)
 				setHeight(uid, height)
 				_, err = s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("height set to %v Centimeters", height))
 				if err != nil {
@@ -172,7 +172,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 
 		if strings.HasPrefix(m.Content, prefix+"height") {
-			uid, err := convertStrToInt(m.Mentions[0].ID)
+			uid, err := convertStrToInt(m.Mentions[len(m.Mentions)-1].ID)
 			if err != nil {
 				log.Errorf("Unable to convert author ID to int: %v", err)
 			}
@@ -193,7 +193,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				}
 
 			}
-			message := m.Mentions[0].Mention() + fmt.Sprintf(" is %v Centimeters tall", height)
+			message := m.Mentions[len(m.Mentions)-1].Mention() + fmt.Sprintf(" is %v Centimeters tall", height)
 			_, err = s.ChannelMessageSend(m.ChannelID, message)
 			if err != nil {
 				log.Errorf("Error sending message: %v", err)
