@@ -193,12 +193,28 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				}
 
 			}
-			message := m.Mentions[len(m.Mentions)-1].Mention() + fmt.Sprintf(" is %v Centimeters tall", height)
-			_, err = s.ChannelMessageSend(m.ChannelID, message)
-			if err != nil {
-				log.Errorf("Error sending message: %v", err)
+			if m.Mentions[len(m.Mentions)-1].ID == "271075764156235777" {
+				message := m.Mentions[len(m.Mentions)-1].Mention() + fmt.Sprintf(" is %v Centimeters tall. Just Perfect", height)
+				_, err = s.ChannelMessageSend(m.ChannelID, message)
+				if err != nil {
+					log.Errorf("Error sending message: %v", err)
+				}
+				return
+			} else if (m.Mentions[len(m.Mentions)-1].ID == "288046134361063424") && (height >= 220) {
+				message := m.Mentions[len(m.Mentions)-1].Mention() + fmt.Sprintf(" is %v Centimeters tall. I Guess your circumference is larger than that of the sun", height)
+				_, err = s.ChannelMessageSend(m.ChannelID, message)
+				if err != nil {
+					log.Errorf("Error sending message: %v", err)
+				}
+				return
+			} else {
+				message := m.Mentions[len(m.Mentions)-1].Mention() + fmt.Sprintf(" is %v Centimeters tall.", height)
+				_, err = s.ChannelMessageSend(m.ChannelID, message)
+				if err != nil {
+					log.Errorf("Error sending message: %v", err)
+				}
+				return
 			}
-			return
 		}
 
 		// dirty boi
