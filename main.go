@@ -3,12 +3,14 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"math"
 	"os"
 	"os/signal"
 	"popsicles-bot/internal/config"
 	"regexp"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	log "github.com/sirupsen/logrus"
@@ -171,6 +173,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			}
 		}
 
+		// Get Height
 		if strings.HasPrefix(m.Content, prefix+"height") {
 			uid, err := convertStrToInt(m.Mentions[len(m.Mentions)-1].ID)
 			if err != nil {
@@ -220,6 +223,19 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		// dirty boi
 		if strings.HasPrefix(m.Content, prefix+"girth") || strings.HasPrefix(m.Content, prefix+"setgirth") {
 			message := "You wish ya dirty wanker"
+			_, err := s.ChannelMessageSend(m.ChannelID, message)
+			if err != nil {
+				log.Errorf("Error sending message: %v", err)
+			}
+			return
+		}
+
+		// oh boi
+		if strings.HasPrefix(m.Content, prefix+"countdown") {
+			timeFormat := "2006-01-02"
+			t, _ := time.Parse(timeFormat, "2022-06-12")
+			duration := time.Until(t)
+			message := fmt.Sprintf("There are %v remaining", int64(math.RoundToEven(duration.Hours()/24)))
 			_, err := s.ChannelMessageSend(m.ChannelID, message)
 			if err != nil {
 				log.Errorf("Error sending message: %v", err)
