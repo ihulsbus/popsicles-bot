@@ -19,11 +19,12 @@ import (
 // DC is a DiscordClient shortcut for readability
 // DS is a DataStoreClient shortcut for readability
 var (
-	DC               = config.Configuration.DiscordClient
-	DS               = config.Configuration.DataStore.Client
-	prefix           = config.Configuration.Global.Prefix
-	numberRegex      = regexp.MustCompile(`[-]?\d[\d,]*[\.]?[\d{2}]*`)
-	disableDave bool = false
+	DC                     = config.Configuration.DiscordClient
+	DS                     = config.Configuration.DataStore.Client
+	prefix                 = config.Configuration.Global.Prefix
+	numberRegex            = regexp.MustCompile(`[-]?\d[\d,]*[\.]?[\d{2}]*`)
+	disableDave       bool = false
+	shtlrds_timestamp time.Time
 )
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -254,6 +255,15 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			if m.ChannelID == "796541275549073488" || m.ChannelID == "871809242305273896" {
 				var user discordgo.User
 
+				if DateEqual(shtlrds_timestamp, time.Now()) {
+					message := "This command is on cooldown. Try again tomorrow."
+					_, err := s.ChannelMessageSend(m.ChannelID, message)
+					if err != nil {
+						log.Errorf("Error sending message: %v", err)
+					}
+					return
+				}
+
 				if m.ChannelID == "796541275549073488" {
 					user.ID = "222510172705259521"
 				} else if m.ChannelID == "871809242305273896" {
@@ -276,6 +286,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				if err != nil {
 					log.Errorf("Error sending message: %v", err)
 				}
+
+				shtlrds_timestamp = time.Now()
 
 				return
 
