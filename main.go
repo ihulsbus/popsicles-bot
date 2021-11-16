@@ -253,7 +253,6 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		if strings.HasPrefix(m.Content, prefix+"shitlords") {
 
 			if m.ChannelID == "796541275549073488" || m.ChannelID == "871809242305273896" {
-				var user discordgo.User
 
 				if DateEqual(shtlrds_timestamp, time.Now()) {
 					message := "This command is on cooldown. Try again tomorrow."
@@ -264,25 +263,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					return
 				}
 
-				if m.ChannelID == "796541275549073488" {
-					user.ID = "222510172705259521"
-				} else if m.ChannelID == "871809242305273896" {
-					user.ID = "188032617793323008"
-				} else {
-					user.ID = "859070011846688808"
-				}
-				m.Mentions = append(m.Mentions, &user)
-
-				message := "Randomly selecting a channel member who will be crowned today's shitlord..."
+				message := "It was fun while it lasted. For now, the last shitlord has been relieved from his duties. But don't be sad, the next shitlord will be appointed soon enough.."
 				_, err := s.ChannelMessageSend(m.ChannelID, message)
-				if err != nil {
-					log.Errorf("Error sending message: %v", err)
-				}
-
-				time.Sleep(time.Second * 5)
-
-				message = "Ding ding ding! I've found todays winner: " + m.Mentions[len(m.Mentions)-1].Mention() + " is a real shitlord today! Congratulations shitlord!"
-				_, err = s.ChannelMessageSend(m.ChannelID, message)
 				if err != nil {
 					log.Errorf("Error sending message: %v", err)
 				}
