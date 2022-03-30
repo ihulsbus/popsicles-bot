@@ -13,7 +13,7 @@ func convertStrToInt(input string) (int, error) {
 	return output, nil
 }
 
-func getHeight(message string) (int, error) {
+func getHeightFromMessage(message string) (int, error) {
 	match := numberRegex.FindString(message)
 	i, err := convertStrToInt(match)
 	if err != nil {
