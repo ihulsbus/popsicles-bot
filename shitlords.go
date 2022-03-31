@@ -7,16 +7,33 @@ import (
 )
 
 func temperature(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	var user *discordgo.User
+	var user discordgo.User
 
-	user.ID = "333312489750265860"
+	if i.Member != nil && i.GuildID == "368157156891033610" {
+		user.ID = "333312489750265860"
 
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: fmt.Sprintf("%v's temperature is: Too High!", user.Mention()),
-		},
-	})
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: fmt.Sprintf("%v's temperature is: Too High!", user.Mention()),
+			},
+		})
+	} else if i.Member != nil && i.GuildID == "871420845338284042" {
+		user.ID = "188032617793323008"
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: fmt.Sprintf("%v's temperature is: Too High!", user.Mention()),
+			},
+		})
+	} else {
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "Sorry, this command only works in a specific guild",
+			},
+		})
+	}
 }
 
 func shitlord(s *discordgo.Session, i *discordgo.InteractionCreate) {
