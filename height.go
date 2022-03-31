@@ -10,10 +10,17 @@ import (
 
 func setHeight(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	var message string
+	var uid int
+	var err error
 
 	heightInput := i.ApplicationCommandData().Options[0].IntValue()
 
-	uid, err := convertStrToInt(i.User.ID)
+	if i.User != nil {
+		uid, err = convertStrToInt(i.User.ID)
+	} else {
+		uid, err = convertStrToInt(i.Member.User.ID)
+	}
+
 	if err != nil {
 		message = fmt.Sprintf("Unable to convert author ID to int: %v", err)
 	} else {

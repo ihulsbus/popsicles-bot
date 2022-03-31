@@ -7,10 +7,16 @@ import (
 )
 
 func getGirth(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	var requestingUser *discordgo.User
 
-	user := i.ApplicationCommandData().Options[0].UserValue(nil)
+	if i.User != nil {
+		requestingUser = i.User
+	} else {
+		requestingUser = i.Member.User
+	}
+	requestedUser := i.ApplicationCommandData().Options[0].UserValue(nil)
 
-	message := fmt.Sprintf("%v is fancying %v :O #MeToo", i.User.Mention(), user.Mention())
+	message := fmt.Sprintf("%v is fancying %v :O #MeToo", requestingUser.Mention(), requestedUser.Mention())
 
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
