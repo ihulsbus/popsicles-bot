@@ -2,7 +2,7 @@ package main
 
 import "github.com/bwmarrin/discordgo"
 
-func shitlord(m *discordgo.MessageCreate) (string, error) {
+func shitlord(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	// var message string
 
 	message := "It was fun while it lasted. For now, the last shitlord has been relieved from his duties. But don't be sad, the next shitlord will be appointed soon enough.."
@@ -26,5 +26,10 @@ func shitlord(m *discordgo.MessageCreate) (string, error) {
 	// }
 	// m.Mentions = append(m.Mentions, &user)
 
-	return message, nil
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: message,
+		},
+	})
 }

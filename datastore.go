@@ -71,21 +71,20 @@ func setShitlord(shitlord Shitlord) error {
 	return nil
 }
 
-// disabled for now
-// func getAllShitlords() (*[]Shitlord, error) {
-// 	var shitlords []Shitlord
+func getAllShitlords() (*[]Shitlord, error) {
+	var shitlords []Shitlord
 
-// 	stmt, err := DS.Prepare("SELECT * FROM shitlord")
-// 	if err != nil {
-// 		return &shitlords, err
-// 	}
+	stmt, err := DS.Prepare("SELECT * FROM shitlord")
+	if err != nil {
+		return &shitlords, err
+	}
 
-// 	if err := stmt.QueryRow().Scan(&shitlords); err != nil {
-// 		return &shitlords, err
-// 	}
+	if err := stmt.QueryRow().Scan(&shitlords); err != nil {
+		return &shitlords, err
+	}
 
-// 	return &shitlords, nil
-// }
+	return &shitlords, nil
+}
 
 func getLastShitlord() (*Shitlord, error) {
 	var shitlord Shitlord

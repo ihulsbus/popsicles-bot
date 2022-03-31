@@ -13,15 +13,6 @@ func convertStrToInt(input string) (int, error) {
 	return output, nil
 }
 
-func getHeightFromMessage(message string) (int, error) {
-	match := numberRegex.FindString(message)
-	i, err := convertStrToInt(match)
-	if err != nil {
-		return 0, err
-	}
-	return i, nil
-}
-
 func DateEqual(date1, date2 time.Time) bool {
 	y1, m1, d1 := date1.Date()
 	y2, m2, d2 := date2.Date()

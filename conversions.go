@@ -1,41 +1,43 @@
 package main
 
 import (
-	"errors"
 	"fmt"
+	"math"
 
 	"github.com/bwmarrin/discordgo"
-	log "github.com/sirupsen/logrus"
+	"github.com/martinlindhe/unit"
 )
 
-func convertToFarenheit(m *discordgo.MessageCreate) ([]string, error) {
-	var messages []string
-	celsius, farenheit, err := getFarenheit(m.Content)
-	if err != nil {
-		err = errors.New(fmt.Sprintf("Error converting temps to Farenheit: %v", err))
-		log.Error(err)
-		return messages, err
-	}
+func convertToFarenheit(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	var message string
 
-	for i := range farenheit {
-		messages = append(messages, fmt.Sprintf("%v° Celsius is %v° Farenheit", celsius[i], farenheit[i]))
-	}
+	input := float64(i.ApplicationCommandData().Options[0].IntValue())
+	temp := unit.FromCelsius(input)
+	temp1 := math.Round((temp.Fahrenheit() * 100) / 100)
 
-	return messages, nil
+	message = fmt.Sprintf("%v° Celsius is %v° Farenheit", input, temp1)
+
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: message,
+		},
+	})
 }
 
-func convertToCelsius(m *discordgo.MessageCreate) ([]string, error) {
-	var messages []string
-	farenheit, celsius, err := getCelcius(m.Content)
-	if err != nil {
-		err = errors.New(fmt.Sprintf("Error converting temps to Celsius: %v", err))
-		log.Error(err)
-		return messages, err
-	}
+func convertToCelsius(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	var message string
 
-	for i := range celsius {
-		messages = append(messages, fmt.Sprintf("%v° Farenheit is %v° Celsius", farenheit[i], celsius[i]))
-	}
+	input := float64(i.ApplicationCommandData().Options[0].IntValue())
+	temp := unit.FromFahrenheit(input)
+	temp1 := math.Round((temp.Celsius() * 100) / 100)
 
-	return messages, nil
+	message = fmt.Sprintf("%v° Farenheit is %v° Celsius", input, temp1)
+
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: message,
+		},
+	})
 }

@@ -1,12 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"os/signal"
 	"popsicles-bot/internal/config"
-	"regexp"
-	"strings"
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
@@ -16,202 +13,158 @@ import (
 // DC is a DiscordClient shortcut for readability
 // DS is a DataStoreClient shortcut for readability
 var (
-	DC               = config.Configuration.DiscordClient
-	DS               = config.Configuration.DataStore.Client
-	prefix           = config.Configuration.Global.Prefix
-	numberRegex      = regexp.MustCompile(`[-]?\d[\d,]*[\.]?[\d{2}]*`)
-	disableDave bool = false
+	DC = config.Configuration.DiscordClient
+	DS = config.Configuration.DataStore.Client
+
+	integerOptionMinValue float64 = -99999999
+	heightOptionMinValue  float64 = 50
+	sizeOptionMinValue    float64 = 0.001
+
+	// All commands and options must have a description
+	// Commands/options without description will fail the registration
+	// of the command.
+	commands = []*discordgo.ApplicationCommand{
+		{
+			Name:        "source",
+			Description: "Get a link to the bot's source code",
+		},
+		{
+			Name:        "farenheit",
+			Description: "Convert celsius values to farenheit",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "celsius",
+					Description: "temperature value",
+					MinValue:    &integerOptionMinValue,
+					MaxValue:    99999999,
+					Required:    true,
+				},
+			},
+		},
+		{
+			Name:        "celsius",
+			Description: "Convert farenheit to celsius",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "farenheit",
+					Description: "temperature value",
+					MinValue:    &integerOptionMinValue,
+					MaxValue:    99999999,
+					Required:    true,
+				},
+			},
+		},
+		{
+			Name:        "height",
+			Description: "Get the height for the given user",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionUser,
+					Name:        "user",
+					Description: "The user you want to get the height from",
+					Required:    true,
+				},
+			},
+		},
+		{
+			Name:        "setheight",
+			Description: "set your height",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "height",
+					Description: "height in Centimeters",
+					MinValue:    &heightOptionMinValue,
+					MaxValue:    230,
+					Required:    true,
+				},
+			},
+		},
+		{
+			Name:        "girth",
+			Description: "Get the ...",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionUser,
+					Name:        "user",
+					Description: "The user you want to get the girth from",
+					Required:    true,
+				},
+			},
+		},
+		{
+			Name:        "setgirth",
+			Description: "Well we don't need to explain this do we?",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "size",
+					Description: "size in millimeters",
+					MinValue:    &sizeOptionMinValue,
+					MaxValue:    1,
+					Required:    true,
+				},
+			},
+		},
+		{
+			Name:        "countdown",
+			Description: "Get the days remaining till X",
+		},
+		{
+			Name:        "shitlords",
+			Description: "Get the current shitlord or crown a new one",
+		},
+	}
+	commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
+		"source":    source,
+		"farenheit": convertToFarenheit,
+		"celsius":   convertToCelsius,
+		"height":    getHeight,
+		"setheight": setHeight,
+		"girth":     getGirth,
+		"setgirth":  setGirth,
+		"countdown": countdown,
+		"shitlords": shitlord,
+	}
 )
 
-func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-	// Check if the message is our own so we can ignore those (something with loops)
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
-
-	if strings.HasPrefix(m.Content, prefix) {
-
-		// TODO: make a case switch instead of endless if statements
-		if m.Author.ID == "288046134361063424" && disableDave {
-			message := "From tato, with love: ( ° ͜ʖ͡°)╭∩╮"
-			_, err := s.ChannelMessageSend(m.ChannelID, message)
-			if err != nil {
-				log.Errorf("Error sending message: %v", err)
-			}
-			return
-		}
-
-		// toggleannoy
-		if strings.HasPrefix(m.Content, prefix+"toggleannoy") {
-			if m.Author.ID == "188032617793323008" {
-				if disableDave {
-					disableDave = false
-					message := "A certain person will now be allowed to use the bot"
-					_, err := s.ChannelMessageSend(m.ChannelID, message)
-					if err != nil {
-						log.Errorf("Error sending message: %v", err)
-					}
-					return
-				} else {
-					disableDave = true
-					message := "A certain person will now be blocked from using the bot"
-					_, err := s.ChannelMessageSend(m.ChannelID, message)
-					if err != nil {
-						log.Errorf("Error sending message: %v", err)
-					}
-					return
-				}
-			} else {
-				message := "you are not authorized to perform this action"
-				_, err := s.ChannelMessageSend(m.ChannelID, message)
-				if err != nil {
-					log.Errorf("Error sending message: %v", err)
-				}
-				return
-			}
-		}
-
-		// Check if the message is "help"
-		if strings.HasPrefix(m.Content, prefix+"help") {
-			message := "Available commands:\n source, farenheit, celsius toggleannoy"
-			_, err := s.ChannelMessageSend(m.ChannelID, message)
-			if err != nil {
-				log.Errorf("Error sending message: %v", err)
-			}
-			return
-		}
-
-		// source
-		if strings.HasPrefix(m.Content, prefix+"source") {
-			_, err := s.ChannelMessageSend(m.ChannelID, "Source code can be found at https://github.com/ihulsbus/popsicles-bot")
-			if err != nil {
-				log.Errorf("Error sending message: %v", err)
-			}
-			return
-		}
-
-		// convert to farenheit
-		if strings.HasPrefix(m.Content, prefix+"farenheit") {
-			messages, err := convertToFarenheit(m)
-			if err != nil {
-				s.ChannelMessageSend(m.ChannelID, err.Error())
-			}
-			for i := range messages {
-				_, err := s.ChannelMessageSend(m.ChannelID, messages[i])
-				if err != nil {
-					log.Errorf("Error sending message: %v", err)
-				}
-			}
-			return
-		}
-
-		//convert to celsius
-		if strings.HasPrefix(m.Content, prefix+"celsius") {
-			messages, err := convertToCelsius(m)
-			if err != nil {
-				s.ChannelMessageSend(m.ChannelID, err.Error())
-			}
-			for i := range messages {
-				_, err := s.ChannelMessageSend(m.ChannelID, messages[i])
-				if err != nil {
-					log.Errorf("Error sending message: %v", err)
-				}
-			}
-			return
-		}
-
-		// Set Height
-		if strings.HasPrefix(m.Content, prefix+"setheight") {
-			message, err := setHeight(m)
-			if err != nil {
-				s.ChannelMessageSend(m.ChannelID, err.Error())
-			}
-			_, err = s.ChannelMessageSend(m.ChannelID, message)
-			if err != nil {
-				log.Errorf("Error sending message: %v", err)
-			}
-		}
-
-		// Get Height
-		if strings.HasPrefix(m.Content, prefix+"height") {
-			response, err := getHeight(m)
-			if err != nil {
-				s.ChannelMessageSend(m.ChannelID, err.Error())
-			}
-
-			_, err = s.ChannelMessageSend(m.ChannelID, response)
-			if err != nil {
-				log.Errorf("Error sending message: %v", err)
-			}
-		}
-
-		// dirty boi
-		if strings.HasPrefix(m.Content, prefix+"girth") || strings.HasPrefix(m.Content, prefix+"setgirth") {
-			message, _ := girth(m)
-			_, err := s.ChannelMessageSend(m.ChannelID, message)
-			if err != nil {
-				log.Errorf("Error sending message: %v", err)
-			}
-			return
-		}
-
-		// oh boi
-		if strings.HasPrefix(m.Content, prefix+"countdown") {
-			message := countdown(m)
-			_, err := s.ChannelMessageSend(m.ChannelID, message)
-			if err != nil {
-				log.Errorf("Error sending message: %v", err)
-			}
-			return
-		}
-
-		// shitlords
-		if strings.HasPrefix(m.Content, prefix+"shitlords") {
-			if m.ChannelID == "796541275549073488" || m.ChannelID == "871809242305273896" {
-				message, err := shitlord(m)
-				if err != nil {
-					s.ChannelMessageSend(m.ChannelID, err.Error())
-				}
-
-				_, err = s.ChannelMessageSend(m.ChannelID, message)
-				if err != nil {
-					log.Errorf("Error sending message: %v", err)
-				}
-				return
-
-			} else {
-				message := "Who? What? I do not recognise such filth. Ask me something else..."
-				_, err := s.ChannelMessageSend(m.ChannelID, message)
-				if err != nil {
-					log.Errorf("Error sending message: %v", err)
-				}
-			}
-		}
-
-	} else {
-		return
-	}
-}
-
 func main() {
-	log.Info(fmt.Sprintf("Bot prefix is set to %v", prefix))
 	log.Info("Starting main loop")
 
 	// Make sure we close the datastore on exit
-	defer DS.Close()
 	if err := setupDatastore(); err != nil {
 		log.Fatalf("Exiting as the datastore is not functional: %v", err)
 	}
 
-	// Register handler for incoming messages
-	DC.AddHandler(messageCreate)
+	defer DS.Close()
 
-	DC.Identify.Intents = discordgo.IntentsGuilds | discordgo.IntentsGuildMessages
+	// Register handler for incoming messages
+	DC.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
+			h(s, i)
+		}
+	})
+
+	DC.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+		log.Printf("Logged in as: %v#%v", s.State.User.Username, s.State.User.Discriminator)
+	})
 
 	err := DC.Open()
 	if err != nil {
 		log.Fatalf("Error opening discord session: %v", err)
 	}
+
+	registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
+	for i, v := range commands {
+		cmd, err := DC.ApplicationCommandCreate(DC.State.User.ID, "", v)
+		if err != nil {
+			log.Panicf("Cannot create '%v' command: %v", v.Name, err)
+		}
+		registeredCommands[i] = cmd
+	}
+	defer DC.Close()
 
 	log.Infoln("Bot is now running. Press CTRL-C to exit.")
 	sc := make(chan os.Signal, 1)
@@ -219,7 +172,24 @@ func main() {
 	<-sc
 	log.Infoln("Stopping bot.")
 
+	log.Println("Removing commands...")
+
+	// // We need to fetch the commands, since deleting requires the command ID.
+	// // We are doing this from the returned commands on line 375, because using
+	// // this will delete all the commands, which might not be desirable, so we
+	// // are deleting only the commands that we added.
+	registeredCommands, err = DC.ApplicationCommands(DC.State.User.ID, "")
+	if err != nil {
+		log.Fatalf("Could not fetch registered commands: %v", err)
+	}
+
+	for _, v := range registeredCommands {
+		err := DC.ApplicationCommandDelete(DC.State.User.ID, "", v.ID)
+		if err != nil {
+			log.Panicf("Cannot delete '%v' command: %v", v.Name, err)
+		}
+	}
+
 	// Cleanly close the discord session
-	DC.Close()
 	log.Infoln("All cleaned up and done. Bye")
 }
