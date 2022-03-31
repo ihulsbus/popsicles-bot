@@ -1,6 +1,23 @@
 package main
 
-import "github.com/bwmarrin/discordgo"
+import (
+	"fmt"
+
+	"github.com/bwmarrin/discordgo"
+)
+
+func temperature(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	var user *discordgo.User
+
+	user.ID = "333312489750265860"
+
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: fmt.Sprintf("%v's temperature is: Too High!", user.Mention()),
+		},
+	})
+}
 
 func shitlord(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	// var message string

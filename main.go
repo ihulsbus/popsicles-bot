@@ -57,6 +57,10 @@ var (
 			},
 		},
 		{
+			Name:        "temperature",
+			Description: "What would her temperature be?",
+		},
+		{
 			Name:        "height",
 			Description: "Get the height for the given user",
 			Options: []*discordgo.ApplicationCommandOption{
@@ -118,15 +122,16 @@ var (
 		},
 	}
 	commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
-		"source":    source,
-		"farenheit": convertToFarenheit,
-		"celsius":   convertToCelsius,
-		"height":    getHeight,
-		"setheight": setHeight,
-		"girth":     getGirth,
-		"setgirth":  setGirth,
-		"countdown": countdown,
-		"shitlords": shitlord,
+		"source":      source,
+		"farenheit":   convertToFarenheit,
+		"celsius":     convertToCelsius,
+		"temperature": temperature,
+		"height":      getHeight,
+		"setheight":   setHeight,
+		"girth":       getGirth,
+		"setgirth":    setGirth,
+		"countdown":   countdown,
+		"shitlords":   shitlord,
 	}
 )
 
