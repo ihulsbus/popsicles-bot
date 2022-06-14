@@ -16,7 +16,11 @@ func countdown(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	duration := time.Until(t)
 	roundedDuration := int64(math.RoundToEven(duration.Hours() / 24))
 
-	if roundedDuration < 69 && roundedDuration > 59 {
+	if roundedDuration <= 0 && roundedDuration >= -9 {
+		message = "hooray! it's happening!"
+	} else if roundedDuration <= -9 {
+		message = "Croatia 2022 when?"
+	} else if roundedDuration < 69 && roundedDuration > 59 {
 		roundedDuration = 69
 		message = fmt.Sprintf("No. no. We don't go lower than %v", roundedDuration)
 	} else if roundedDuration == 42 {
