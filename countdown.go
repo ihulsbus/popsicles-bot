@@ -12,7 +12,7 @@ func countdown(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	var message string
 
 	dateFormat := "2006-01-02"
-	t, _ := time.Parse(dateFormat, "2022-06-12")
+	t, _ := time.Parse(dateFormat, "2022-09-04")
 	duration := time.Until(t)
 	roundedDuration := int64(math.RoundToEven(duration.Hours() / 24))
 
